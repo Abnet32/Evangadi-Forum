@@ -2,11 +2,11 @@ import { Route, Routes } from "react-router-dom";
 import ChatbotLayout from "./Components/Layout/Layout";
 import SimpleLayout from "./Components/Layout/SimpleLayout";
 import Article from "./Components/Articles/Articles";
-import Landing from "./pages/Landing/Landing";
+import Landing from "./Pages/Landing/Landing";
 import Home from "./pages/Home/Home";
 import Question from "./pages/Question/Question";
 import HowItWorks from "./pages/HowItWorks/HowItWorks";
-import Answer from "./pages/Answer/Answer";
+import Answer from "./Pages/Answer/Answer";
 
 function Router() {
   return (
