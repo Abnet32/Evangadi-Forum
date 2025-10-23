@@ -16,6 +16,7 @@ import ResetPassword from "./Pages/ForgotPassword/ResetPassword";
 // Layouts
 import ChatbotLayout from "./Components/Layout/Layout";
 import SimpleLayout from "./Components/Layout/SimpleLayout";
+import NotFound from "./Pages/NotFound/NotFound";
 
 function Router() {
   return (
@@ -103,7 +104,7 @@ function Router() {
       {/* 404 Not Found */}
       <Route
         path="*"
-        element={<h1 style={{ textAlign: "center" }}>404 Not Found</h1>}
+        element={<NotFound />}
       />
     </Routes>
   );

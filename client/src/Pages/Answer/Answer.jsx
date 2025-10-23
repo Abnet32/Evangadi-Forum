@@ -23,7 +23,7 @@ function Answer() {
   const fetchQuestion = async () => {
     try {
       setIsLoading(true);
-      const response = await instance.get(`/question/${questionId}`, {
+      const response = await instance.get(`/question/question/${questionId}`, {
         headers: { authorization: "Bearer " + token },
       });
 
@@ -42,7 +42,7 @@ function Answer() {
   const fetchAnswers = async () => {
     try {
       setIsLoading(true);
-      const response = await instance.get(`/answer/${questionId}`, {
+      const response = await instance.get(`/answer/answer/${questionId}`, {
         headers: { authorization: "Bearer " + token },
       });
 
@@ -65,7 +65,7 @@ function Answer() {
     try {
       setIsLoading(true);
       const response = await instance.post(
-        `/answer/${questionId}`,
+        `/answer/answer/${questionId}`,
         { answer },
         { headers: { authorization: "Bearer " + token } }
       );

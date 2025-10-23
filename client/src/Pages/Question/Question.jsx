@@ -35,7 +35,7 @@ const Question = () => {
 
     try {
       await axios.post(
-        "/question",
+        "/question/question",
         { title, description },
         { headers: { Authorization: `Bearer ${token}` } }
       );

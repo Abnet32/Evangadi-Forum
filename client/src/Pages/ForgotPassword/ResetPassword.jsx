@@ -13,14 +13,17 @@ const ResetPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setMessage(""); // Clear previous messages
     try {
-      const res = await axios.post(`/auth/reset-password/${token}`, {
-        newPassword,
-      });
+      const res = await axios.post(`/auth/reset-password/${token}`, { newPassword });
       setMessage(res.data.message);
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
-      setMessage(err.response?.data?.message || "Error resetting password.");
+      console.error("Reset password error:", err);
+      const errorMessage = err.response?.data?.message || 
+                          err.message || 
+                          "Error resetting password. Please try again.";
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -30,11 +33,10 @@ const ResetPassword = () => {
     <div className={classes["auth-container"]}>
       <div className={classes["auth-box"]}>
         <h2>Reset Password</h2>
-        <p>Enter your new password below.</p>
         <form onSubmit={handleSubmit}>
           <input
             type="password"
-            placeholder="New password"
+            placeholder="New Password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
@@ -44,11 +46,9 @@ const ResetPassword = () => {
           </button>
         </form>
         {message && (
-          <p
-            className={`${classes["auth-message"]} ${
-              message.includes("success") ? classes.success : classes.error
-            }`}
-          >
+          <p className={`${classes["auth-message"]} ${
+            message.includes("successfully") ? classes["success"] : classes["error"]
+          }`}>
             {message}
           </p>
         )}

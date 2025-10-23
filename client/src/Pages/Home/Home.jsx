@@ -30,7 +30,7 @@ const Home = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const questionsRequest = axios.get("/question", {
+      const questionsRequest = axios.get("/question/question", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
