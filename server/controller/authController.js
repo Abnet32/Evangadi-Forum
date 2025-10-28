@@ -1,92 +1,100 @@
-const crypto = require("crypto");
-const bcrypt = require("bcrypt");
 const db = require("../db/dbConfig");
-const sendEmail = require("../utils/sendEmail");
+const nodemailer = require("nodemailer");
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
+require("dotenv").config();
 
-// Helper to hash token
-function hashToken(token) {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
-
+// 🔹 Forgot Password
 exports.forgotPassword = async (req, res) => {
-  console.log("🔍 Forgot password endpoint hit:", req.body);
   const { email } = req.body;
-  if (!email || !email.includes("@"))
-    return res.status(400).json({ message: "Invalid email" });
 
   try {
-    const [users] = await db.query("SELECT * FROM users WHERE email = ?", [
+    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
-    if (users.length === 0)
-      return res.status(404).json({ message: "No account found" });
+    if (rows.length === 0)
+      return res.status(404).json({ message: "User not found" });
 
-    // Generate and hash token
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = hashToken(rawToken);
-    const expires = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-      .toISOString()
-      .slice(0, 19)
-      .replace("T", " ");
+    const user = rows[0];
 
-    // Save token and expiry
+    // 1️⃣ Generate token & expiration
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
+    // 2️⃣ Save to users table
     await db.query(
-      "UPDATE users SET reset_token=?, reset_expires=? WHERE email=?",
-      [hashedToken, expires, email]
+      "UPDATE users SET reset_token = ?, reset_expires = ? WHERE userid = ?",
+      [resetToken, resetExpires, user.userid]
     );
 
-    // Create reset URL
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${rawToken}`;
-    const html = `
-      <h2>Password Reset Request</h2>
-      <p>Click the link below to reset your password:</p>
-      <a href="${resetUrl}" target="_blank">${resetUrl}</a>
-      <p>This link expires in 10 minutes.</p>
-    `;
+    // 3️⃣ Send reset email
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAIL_HOST,
+      port: process.env.MAIL_PORT,
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
+    });
 
-    // Send email via Brevo
-    await sendEmail(
-      email,
-      "Password Reset Request",
-      `Reset your password here: ${resetUrl}`,
-      html
-    );
+    const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-    res.json({ message: "Password reset email sent successfully!" });
+    await transporter.sendMail({
+      from: '"Support Team" <support@example.com>',
+      to: email,
+      subject: "Password Reset Request",
+      html: `
+        <h3>Password Reset Request</h3>
+        <p>Click below to reset your password (expires in 15 minutes):</p>
+        <a href="${resetLink}">${resetLink}</a>
+      `,
+    });
+
+    res.json({ message: "Password reset link sent to your email" });
   } catch (err) {
-    console.error("Forgot Password Error:", err);
-    res.status(500).json({ message: "Failed to send reset email" });
+    console.error("Forgot password error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+// 🔹 Reset Password
 exports.resetPassword = async (req, res) => {
   const { token } = req.params;
   const { newPassword } = req.body;
 
-  if (!token || !newPassword || newPassword.length < 8)
-    return res.status(400).json({ message: "Invalid request" });
-
   try {
-    const hashedToken = hashToken(token);
-    const [users] = await db.query(
-      "SELECT * FROM users WHERE reset_token = ? AND reset_expires > NOW()",
-      [hashedToken]
-    );
+    // 1️⃣ Find user with token
+    const [rows] = await db.query("SELECT * FROM users WHERE reset_token = ?", [
+      token,
+    ]);
 
-    if (users.length === 0)
+    if (rows.length === 0)
       return res.status(400).json({ message: "Invalid or expired token" });
 
-    const user = users[0];
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const user = rows[0];
+    const now = new Date();
 
+    // 2️⃣ Check expiration
+    if (now > user.reset_expires) {
+      await db.query(
+        "UPDATE users SET reset_token = NULL, reset_expires = NULL WHERE userid = ?",
+        [user.userid]
+      );
+      return res
+        .status(400)
+        .json({ message: "Token expired. Request a new one." });
+    }
+
+    // 3️⃣ Hash new password and update
+    const hashed = await bcrypt.hash(newPassword, 10);
     await db.query(
       "UPDATE users SET password = ?, reset_token = NULL, reset_expires = NULL WHERE userid = ?",
-      [hashedPassword, user.userid]
+      [hashed, user.userid]
     );
 
-    res.json({ message: "Password has been reset successfully!" });
+    res.json({ message: "Password reset successfully" });
   } catch (err) {
-    console.error("Reset Password Error:", err);
-    res.status(500).json({ message: "Something went wrong" });
+    console.error("Reset password error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
