@@ -31,6 +31,7 @@ const limiter = rateLimit({
   message: "Too many requests from this IP, please try again later.",
 });
 app.use(limiter);
+
 // -------------------------------
 // Test route
 // -------------------------------
