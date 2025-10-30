@@ -57,7 +57,7 @@ const books = [
 const Article = () => {
   return (
     <div className={classes.articleContainer}>
-      <h2>📘 Most Recommended Free Programming Books</h2>
+      <h2>📘 Most Recommended Free Programming Books </h2>
       <ul>
         {books.map((book, index) => (
           <li key={index}>
