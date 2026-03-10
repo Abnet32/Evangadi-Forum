@@ -21,7 +21,12 @@ const port = process.env.PORT || 14255;
 // Middleware
 // -------------------------------
 app.use(helmet()); // Security headers
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://evangadi-forum-sand.vercel.app",
+    credentials: true,
+  })
+);
 app.use(express.json({limit: "10mb"})); // Limit request size
 
 // Rate limiting
